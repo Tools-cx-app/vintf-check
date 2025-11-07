@@ -15,6 +15,7 @@ fn get_kernel_level() -> (String, String) {
 }
 
 fn main() -> Result<()> {
+    let mut count = 0;
     let output = Command::new("zcat").arg("/proc/config.gz").output()?.stdout;
     let stdout = String::from_utf8_lossy(&output);
     let (level, sub_level) = get_kernel_level();
@@ -71,6 +72,7 @@ fn main() -> Result<()> {
                                 let xml_v = reader.read_text(e.name())?;
                                 if k.to_string() == xml_k && v.to_string() != xml_v {
                                     println!("This option({xml_k}) should be {xml_v}");
+                                    count += 1;
                                 }
                             }
                         }
@@ -81,6 +83,9 @@ fn main() -> Result<()> {
                 buf.clear();
             }
         }
+    }
+
+    if count == 0 {
         println!("No conflict found");
     }
     Ok(())
