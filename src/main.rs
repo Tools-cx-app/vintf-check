@@ -1,4 +1,4 @@
-use std::{fs, process::Command};
+use std::{env, fs, process::Command};
 
 use anyhow::Result;
 use quick_xml::{Reader, events::Event};
@@ -16,13 +16,19 @@ fn get_kernel_level() -> (String, String) {
 
 fn main() -> Result<()> {
     let mut count = 0;
-    let output = Command::new("zcat").arg("/proc/config.gz").output()?.stdout;
-    let stdout = String::from_utf8_lossy(&output);
+    let args: Vec<_> = env::args().collect();
+    let config = if args.len() != 1 {
+        let output = Command::new("zcat").arg("/proc/config.gz").output()?.stdout;
+        let stdout = String::from_utf8_lossy(&output);
+        stdout.to_string()
+    } else {
+        fs::read_to_string(&args[1])?
+    };
     let (level, sub_level) = get_kernel_level();
     let version = format!("{level}.{sub_level}");
     let mut inside_target_kernel = false;
 
-    for i in stdout.clone().lines() {
+    for i in config.clone().lines() {
         let mid = i.find('=');
 
         if mid.is_none() {
