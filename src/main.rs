@@ -17,7 +17,7 @@ fn get_kernel_level() -> (String, String) {
 fn main() -> Result<()> {
     let mut count = 0;
     let args: Vec<_> = env::args().collect();
-    let config = if args.len() != 1 {
+    let config = if args.get(1).is_none() {
         let output = Command::new("zcat").arg("/proc/config.gz").output()?.stdout;
         let stdout = String::from_utf8_lossy(&output);
         stdout.to_string()
@@ -29,13 +29,10 @@ fn main() -> Result<()> {
     let mut inside_target_kernel = false;
 
     for i in config.clone().lines() {
-        let mid = i.find('=');
-
-        if mid.is_none() {
-            continue;
-        }
-
-        let (k, v) = i.split_at(mid.unwrap());
+        let (k, v) = match i.split_once('=') {
+            Some(s) => s,
+            None => continue,
+        };
 
         for dir in fs::read_dir("/system/etc/vintf/")? {
             let dir = dir?;
